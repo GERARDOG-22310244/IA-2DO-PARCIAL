@@ -1,0 +1,63 @@
+# Grafo representado como diccionario de adyacencias
+grafo = {
+    'A': ['B', 'C'],
+    'B': ['A', 'C', 'D'],
+    'C': ['A', 'B', 'D'],
+    'D': ['B', 'C']
+}
+
+# Colores disponibles
+colores = ['Rojo', 'Verde', 'Azul']
+
+# Dominio de cada nodo
+dominios = {nodo: list(colores) for nodo in grafo}
+asignacion = {}
+
+# Verifica si una asignación de color es válida
+def es_valido(nodo, color):
+    for vecino in grafo[nodo]:
+        if vecino in asignacion and asignacion[vecino] == color:
+            return False
+    return True
+
+# Forward checking: elimina valores del dominio de vecinos
+def forward_check(nodo, color):
+    eliminados = {}
+    for vecino in grafo[nodo]:
+        if vecino not in asignacion and color in dominios[vecino]:
+            dominios[vecino].remove(color)
+            eliminados[vecino] = color
+            if not dominios[vecino]:  # Si algún dominio queda vacío
+                return False, eliminados
+    return True, eliminados
+
+# Restaura los valores eliminados si se hace backtrack
+def restaurar(eliminados):
+    for nodo, color in eliminados.items():
+        dominios[nodo].append(color)
+
+# Algoritmo de búsqueda con forward checking
+def forward_checking():
+    if len(asignacion) == len(grafo):
+        return True
+
+    # Selección del nodo no asignado con dominio más pequeño (heurística MRV)
+    nodo = min([n for n in grafo if n not in asignacion], key=lambda n: len(dominios[n]))
+
+    for color in dominios[nodo]:
+        if es_valido(nodo, color):
+            asignacion[nodo] = color
+            ok, eliminados = forward_check(nodo, color)
+            if ok and forward_checking():
+                return True
+            del asignacion[nodo]
+            restaurar(eliminados)
+    return False
+
+# Ejecutar el algoritmo
+if forward_checking():
+    print("Solución encontrada:")
+    for nodo, color in asignacion.items():
+        print(f"{nodo} → {color}")
+else:
+    print("No se encontró una solución válida.")
